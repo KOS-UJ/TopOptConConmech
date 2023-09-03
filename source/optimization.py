@@ -4,6 +4,7 @@ from matplotlib import tri
 
 from conmech.simulations.problem_solver import NonHomogenousSolver
 from conmech.scenarios.problems import StaticDisplacementProblem
+from conmech.mesh.mesh import Mesh
 
 
 class Optimization:
@@ -144,13 +145,20 @@ class Optimization:
             change = np.max(np.abs(density - old_density))
             print(f'change = {change}')
 
+            axes_sizes = self.setup.elements_number
             plot_displacements(
-                self.mesh,
-                ratio=2/5,
+                mesh=self.mesh,
                 displacements=result.displacement,
                 density=density,
                 scale_factor=1,
+                ratio=axes_sizes[0] / axes_sizes[1],
                 file_name=f'output/displacement{iteration}'
+            )
+            plot_density(
+                mesh=self.mesh,
+                density=density,
+                ratio=axes_sizes[0] / axes_sizes[1],
+                file_name=f'output/density{iteration}'
             )
 
         #     if iteration < 25 or iteration % 5 == 0 or iteration in [32, 64]:
@@ -165,7 +173,26 @@ class Optimization:
         return density
 
 
-def plot_displacements(mesh, ratio: float, displacements: np.ndarray, density: np.ndarray, scale_factor: float, file_name: str):
+def plot_density(mesh: Mesh, density: np.ndarray, ratio: float, file_name: str):
+    triangulation = tri.Triangulation(
+        x=mesh.initial_nodes[:, 0],
+        y=mesh.initial_nodes[:, 1],
+        triangles=mesh.elements
+    )
+    plt.tripcolor(triangulation, density, cmap='Greys', vmin=0, vmax=1)
+    
+    ax = plt.gca()
+    if ratio is not None:
+        x_left, x_right = ax.get_xlim()
+        y_low, y_high = ax.get_ylim()
+        ax.set_aspect(abs((x_right - x_left) / (y_low - y_high)) * ratio)
+    
+    plt.colorbar()
+    plt.grid()
+    plt.savefig(file_name, bbox_inches='tight')
+    plt.close()
+
+def plot_displacements(mesh: Mesh, displacements: np.ndarray, density: np.ndarray, scale_factor: float, ratio: float, file_name: str):
 
     before = tri.Triangulation(
         x=mesh.initial_nodes[:, 0],
