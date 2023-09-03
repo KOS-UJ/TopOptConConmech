@@ -19,7 +19,7 @@ class Optimization:
         self.setup = setup
         self.simulation = simulation
         self.mesh = simulation.body.mesh
-        
+
         self.penalty = penalty
         self.volume_fraction = volume_fraction
         self.filter_radius = filter_radius
@@ -59,7 +59,7 @@ class Optimization:
             if np.sum(self.elem_volumes * x_new) < self.volume_fraction * self.volume:
                 upper = mid
             else:
-                lower = mid                
+                lower = mid
         return x_new
 
     def mesh_independency_filter(self, comp_deriv: np.ndarray, density: np.ndarray):
@@ -82,7 +82,7 @@ class Optimization:
         ])
         return volumes
 
-    def compute_elems_compliance(self, density: np.ndarray, displacement: np.ndarray, elem_stiff: list):
+    def compute_elems_compliance(self, displacement: np.ndarray, elem_stiff: np.ndarray):
         # elements_compliance = np.empty_like(density)
         # for elem_idx in range(elements_compliance.size):
         #     elem_displacement = np.expand_dims(displacement[self.base_func_ids[elem_idx]], 1)
@@ -100,7 +100,7 @@ class Optimization:
         w_mat = self.simulation.body._local_stifness_matrices
         mu = self.setup.mu_coef
         lambda_ = self.setup.la_coef
-        
+
         A_11 = (2 * mu + lambda_) * w_mat[0] + mu * w_mat[3]
         A_12 = mu * w_mat[2] + lambda_ * w_mat[1]
         A_21 = lambda_ * w_mat[2] + mu * w_mat[1]
@@ -114,26 +114,16 @@ class Optimization:
         iteration = 0
         change = 1.
 
-        # fem = FEM(
-        #     mesh=self.mesh,
-        #     rhs_func=self.rhs_func,
-        #     dirichlet_func=self.dirichlet_func,
-        #     neumann_func=self.neumann_func,
-        #     young_modulus=self.material.value[0],
-        #     poisson_ratio=self.material.value[1]
-        # )
-        
         elem_stiff = self.create_local_stifmats()
 
         while change > 1e-2 and iteration < iteration_limit:
             iteration += 1
-            
+
             self.simulation.update_density(density=density ** self.penalty)
             result = self.simulation.solve(initial_displacement=self.setup.initial_displacement)
             displacement = result.displacement.flatten()
 
             elements_compliance = self.compute_elems_compliance(
-                density=density,
                 displacement=displacement,
                 elem_stiff=elem_stiff
             )
@@ -153,7 +143,7 @@ class Optimization:
             print(f'volume = {np.sum(density * self.elem_volumes)}')
             change = np.max(np.abs(density - old_density))
             print(f'change = {change}')
-            
+
             plot_displacements(
                 self.mesh,
                 ratio=2/5,
@@ -176,7 +166,7 @@ class Optimization:
 
 
 def plot_displacements(mesh, ratio: float, displacements: np.ndarray, density: np.ndarray, scale_factor: float, file_name: str):
-        
+
     before = tri.Triangulation(
         x=mesh.initial_nodes[:, 0],
         y=mesh.initial_nodes[:, 1],
@@ -205,9 +195,9 @@ def plot_displacements(mesh, ratio: float, displacements: np.ndarray, density: n
 
 def area_of_triangle(nodes: np.ndarray) -> float:
     # coords = np.array([['x1', 'y1'], ['x2', 'y2'], ['x3', 'y3']])
-    doubleT = nodes[1:3].T - np.expand_dims(nodes[0], 1)
-    areaT = np.abs(np.linalg.det(doubleT)) / 2
-    return areaT
+    double_t = nodes[1:3].T - np.expand_dims(nodes[0], 1)
+    area_t = np.abs(np.linalg.det(double_t)) / 2
+    return area_t
 
 
 def center_of_mass(nodes: np.ndarray) -> np.ndarray:
