@@ -121,7 +121,7 @@ class Optimization:
 
             self.simulation.update_density(density=density ** self.penalty)
             result = self.simulation.solve(initial_displacement=self.setup.initial_displacement)
-            displacement = result.displacement.flatten()
+            displacement = np.hstack((result.displacement[:, 0], result.displacement[:, 1]))
 
             elements_compliance = self.compute_elems_compliance(
                 displacement=displacement,
