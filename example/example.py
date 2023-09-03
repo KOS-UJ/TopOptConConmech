@@ -13,10 +13,10 @@ from source.optimization import Optimization
 @dataclass
 class StaticSetup(StaticDisplacementProblem):
     grid_height: ... = 1.0
-    elements_number: ... = (2, 5)
+    elements_number: ... = (20, 40)
     mu_coef: ... = 4
     la_coef: ... = 4
-    contact_law: ... = make_slope_contact_law(slope=1)
+    contact_law: ... = make_slope_contact_law(slope=1e2)
 
     @staticmethod
     def inner_forces(x, t=None):
@@ -24,14 +24,14 @@ class StaticSetup(StaticDisplacementProblem):
 
     @staticmethod
     def outer_forces(x, t=None):
-        return np.array([0, 0.1]) if x[1] < 0.2 and x[0] > 2.2 else np.array([0, 0])
+        return np.array([0, -1]) if x[1] < 0.1 and x[0] > 1.9 else np.array([0, 0])
 
     @staticmethod
     def friction_bound(u_nu: float) -> float:
         return 0
 
     boundaries: ... = BoundariesDescription(
-        contact=lambda x: x[1] == 0 and x[0] < 0.2, 
+        contact=lambda x: x[1] == 0 and x[0] < 1,
         dirichlet=lambda x: x[0] == 0
     )
 
@@ -47,9 +47,10 @@ def main(config: Config):
 
     optimizer = Optimization(
         setup=setup,
-        simulation=runner
+        simulation=runner,
+        filter_radius=0.1
     )
-    optimizer.optimize(10)
+    optimizer.optimize(25)
 
 
 if __name__ == "__main__":
