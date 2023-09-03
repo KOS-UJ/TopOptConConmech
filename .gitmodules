@@ -1,0 +1,4 @@
+[submodule "conmech"]
+	path = conmech
+	url = git@github.com:wprzadka/conmech.git
+	branch = density
