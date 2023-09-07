@@ -1,11 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import tri
 
 from conmech.simulations.problem_solver import NonHomogenousSolver
 from conmech.scenarios.problems import StaticDisplacementProblem
-from conmech.mesh.mesh import Mesh
 from conmech.dynamics.factory.dynamics_factory_method import get_factory
+
+from source.plotting import plot_density, plot_displacements
+from source.mesh_utils import center_of_mass, area_of_triangle
 
 
 class Optimization:
@@ -169,61 +169,3 @@ class Optimization:
         #         )
         # self.plots_utils.draw_final_design(density)
         return density
-
-
-def plot_density(mesh: Mesh, density: np.ndarray, ratio: float, file_name: str):
-    triangulation = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0],
-        y=mesh.initial_nodes[:, 1],
-        triangles=mesh.elements
-    )
-    plt.tripcolor(triangulation, density, cmap='Greys', vmin=0, vmax=1)
-    
-    ax = plt.gca()
-    if ratio is not None:
-        x_left, x_right = ax.get_xlim()
-        y_low, y_high = ax.get_ylim()
-        ax.set_aspect(abs((x_right - x_left) / (y_low - y_high)) * ratio)
-    
-    plt.colorbar()
-    plt.grid()
-    plt.savefig(file_name, bbox_inches='tight')
-    plt.close()
-
-def plot_displacements(mesh: Mesh, displacements: np.ndarray, density: np.ndarray, scale_factor: float, ratio: float, file_name: str):
-
-    before = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0],
-        y=mesh.initial_nodes[:, 1],
-        triangles=mesh.elements
-    )
-    before.set_mask(density < 0.08)
-    plt.triplot(before, color='#1f77b4')
-    after = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0] + displacements[:, 0] * scale_factor,
-        y=mesh.initial_nodes[:, 1] + displacements[:, 1] * scale_factor,
-        triangles=mesh.elements
-    )
-    after.set_mask(density < 0.08)
-    plt.triplot(after, color='#ff7f0e')
-
-    ax = plt.gca()
-    if ratio is not None:
-        x_left, x_right = ax.get_xlim()
-        y_low, y_high = ax.get_ylim()
-        ax.set_aspect(abs((x_right - x_left) / (y_low - y_high)) * ratio)
-
-    plt.grid()
-    plt.savefig(file_name, bbox_inches='tight')
-    plt.close()
-
-
-def area_of_triangle(nodes: np.ndarray) -> float:
-    # coords = np.array([['x1', 'y1'], ['x2', 'y2'], ['x3', 'y3']])
-    double_t = nodes[1:3].T - np.expand_dims(nodes[0], 1)
-    area_t = np.abs(np.linalg.det(double_t)) / 2
-    return area_t
-
-
-def center_of_mass(nodes: np.ndarray) -> np.ndarray:
-    return np.sum(nodes, 0) / nodes.shape[0]
