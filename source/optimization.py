@@ -5,6 +5,7 @@ from conmech.scenarios.problems import StaticDisplacementProblem
 from conmech.dynamics.factory.dynamics_factory_method import get_factory
 
 from source.plotting import plot_density, plot_displacements
+from source.mesh_utils import center_of_mass, area_of_triangle
 
 
 class Optimization:
@@ -168,13 +169,3 @@ class Optimization:
         #         )
         # self.plots_utils.draw_final_design(density)
         return density
-
-def area_of_triangle(nodes: np.ndarray) -> float:
-    # coords = np.array([['x1', 'y1'], ['x2', 'y2'], ['x3', 'y3']])
-    double_t = nodes[1:3].T - np.expand_dims(nodes[0], 1)
-    area_t = np.abs(np.linalg.det(double_t)) / 2
-    return area_t
-
-
-def center_of_mass(nodes: np.ndarray) -> np.ndarray:
-    return np.sum(nodes, 0) / nodes.shape[0]
