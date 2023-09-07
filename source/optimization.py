@@ -5,6 +5,7 @@ from matplotlib import tri
 from conmech.simulations.problem_solver import NonHomogenousSolver
 from conmech.scenarios.problems import StaticDisplacementProblem
 from conmech.mesh.mesh import Mesh
+from conmech.dynamics.factory.dynamics_factory_method import get_factory
 
 
 class Optimization:
@@ -17,6 +18,7 @@ class Optimization:
             volume_fraction: float = 0.6,
             filter_radius: float = 1.
     ):
+        self.dimension = 2
         self.setup = setup
         self.simulation = simulation
         self.mesh = simulation.body.mesh
@@ -98,15 +100,11 @@ class Optimization:
         return elements_compliance
 
     def create_local_stifmats(self):
-        w_mat = self.simulation.body._local_stifness_matrices
+        w_mat = self.simulation.body.dynamics._local_stifness_matrices
         mu = self.setup.mu_coef
         lambda_ = self.setup.la_coef
-
-        A_11 = (2 * mu + lambda_) * w_mat[0] + mu * w_mat[3]
-        A_12 = mu * w_mat[2] + lambda_ * w_mat[1]
-        A_21 = lambda_ * w_mat[2] + mu * w_mat[1]
-        A_22 = mu * w_mat[0] + (2 * mu + lambda_) * w_mat[3]
-        return np.block([[A_11, A_12], [A_21, A_22]])
+        factory = get_factory(self.dimension)
+        return factory.calculate_constitutive_matrices(W=w_mat, mu=mu, lambda_=lambda_)
 
     def optimize(self, iteration_limit: int = 100) -> np.ndarray:
 

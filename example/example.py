@@ -62,9 +62,9 @@ def main(config: Config):
         volume_fraction=0.3
     )
     density = optimizer.optimize(25)
-    
-    export_mesh_with_density(mesh=runner.body.mesh, mask=density > 0.8, filename="temp.msh")
-    
+
+    export_mesh_with_density(mesh=runner.body.mesh, mask=density > 0.7, filename="temp.msh")
+
     # mesh = import_mesh("temp.msh")
     # traingulation = tri.Triangulation(
     #     x=mesh.points[:, 0],
