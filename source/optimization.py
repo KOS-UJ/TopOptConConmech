@@ -9,14 +9,13 @@ from source.mesh_utils import center_of_mass, area_of_triangle
 
 
 class Optimization:
-
     def __init__(
-            self,
-            setup: StaticDisplacementProblem,
-            simulation: NonHomogenousSolver,
-            penalty: float = 3,
-            volume_fraction: float = 0.6,
-            filter_radius: float = 1.
+        self,
+        setup: StaticDisplacementProblem,
+        simulation: NonHomogenousSolver,
+        penalty: float = 3,
+        volume_fraction: float = 0.6,
+        filter_radius: float = 1.0,
     ):
         self.dimension = 2
         self.setup = setup
@@ -41,14 +40,15 @@ class Optimization:
         #     elem_volumes=self.elem_volumes
         # )
 
-
-    def bisection(self, x: np.ndarray, comp_deriv: np.ndarray, num_dumping: float = 0.5) -> np.ndarray:
+    def bisection(
+        self, x: np.ndarray, comp_deriv: np.ndarray, num_dumping: float = 0.5
+    ) -> np.ndarray:
         step = 0.2
         lower = 1e-9
         upper = 1e9
 
         lower_limit = np.maximum(1e-4, x - step)
-        upper_limit = np.minimum(1., x + step)
+        upper_limit = np.minimum(1.0, x + step)
 
         x_new: np.ndarray
         while upper - lower > 1e-9:
@@ -72,17 +72,18 @@ class Optimization:
         return new_comp_deriv
 
     def get_elements_surrounding(self):
-        centers = np.array([center_of_mass(self.mesh.nodes[el_nodes]) for el_nodes in self.mesh.elements])
+        centers = np.array(
+            [center_of_mass(self.mesh.nodes[el_nodes]) for el_nodes in self.mesh.elements]
+        )
         diffs = centers[:, None] - centers
         distances = np.linalg.norm(diffs, axis=2)
         elem_filter_weights = (self.filter_radius - distances).clip(min=0)
         return elem_filter_weights
 
     def get_elems_volumes(self):
-        volumes = np.array([
-            area_of_triangle(self.mesh.nodes[nodes_ids])
-            for nodes_ids in self.mesh.elements
-        ])
+        volumes = np.array(
+            [area_of_triangle(self.mesh.nodes[nodes_ids]) for nodes_ids in self.mesh.elements]
+        )
         return volumes
 
     def compute_elems_compliance(self, displacement: np.ndarray, elem_stiff: np.ndarray):
@@ -92,10 +93,14 @@ class Optimization:
         #     elements_compliance[elem_idx] = elem_displacement.T @ elem_stiff[elem_idx] @ elem_displacement
         # 1335 ms
 
-        elements_compliance = np.squeeze(np.array([
-            displacement[None, base_funcs] @ elem_stiff_mat @ displacement[base_funcs, None]
-            for base_funcs, elem_stiff_mat in zip(self.base_func_ids, elem_stiff)
-        ]))
+        elements_compliance = np.squeeze(
+            np.array(
+                [
+                    displacement[None, base_funcs] @ elem_stiff_mat @ displacement[base_funcs, None]
+                    for base_funcs, elem_stiff_mat in zip(self.base_func_ids, elem_stiff)
+                ]
+            )
+        )
         # 861 ms
         return elements_compliance
 
@@ -107,41 +112,38 @@ class Optimization:
         return factory.calculate_constitutive_matrices(W=w_mat, mu=mu, lambda_=lambda_)
 
     def optimize(self, iteration_limit: int = 100) -> np.ndarray:
-
         density = np.full(self.mesh.elements.shape[0], fill_value=self.volume_fraction)
 
         iteration = 0
-        change = 1.
+        change = 1.0
 
         elem_stiff = self.create_local_stifmats()
 
         while change > 1e-2 and iteration < iteration_limit:
             iteration += 1
 
-            self.simulation.update_density(density=density ** self.penalty)
+            self.simulation.update_density(density=density**self.penalty)
             result = self.simulation.solve(initial_displacement=self.setup.initial_displacement)
             displacement = np.hstack((result.displacement[:, 0], result.displacement[:, 1]))
 
             elements_compliance = self.compute_elems_compliance(
-                displacement=displacement,
-                elem_stiff=elem_stiff
+                displacement=displacement, elem_stiff=elem_stiff
             )
 
-            compliance = np.sum((density ** self.penalty) * elements_compliance)
+            compliance = np.sum((density**self.penalty) * elements_compliance)
             comp_derivative = -self.penalty * (density ** (self.penalty - 1)) * elements_compliance
-            print(f'iteration: {iteration}')
-            print(f'compliance = {compliance}')
+            print(f"iteration: {iteration}")
+            print(f"compliance = {compliance}")
 
             comp_derivative = self.mesh_independency_filter(
-                comp_deriv=comp_derivative,
-                density=density
+                comp_deriv=comp_derivative, density=density
             )
 
             old_density = density.copy()
             density = self.bisection(x=density, comp_deriv=comp_derivative)
-            print(f'volume = {np.sum(density * self.elem_volumes)}')
+            print(f"volume = {np.sum(density * self.elem_volumes)}")
             change = np.max(np.abs(density - old_density))
-            print(f'change = {change}')
+            print(f"change = {change}")
 
             axes_sizes = self.mesh.scale
             plot_displacements(
@@ -150,13 +152,13 @@ class Optimization:
                 density=density,
                 scale_factor=1,
                 ratio=axes_sizes[0] / axes_sizes[1],
-                file_name=f'output/displacement{iteration}'
+                file_name=f"output/displacement{iteration}",
             )
             plot_density(
                 mesh=self.mesh,
                 density=density,
                 ratio=axes_sizes[0] / axes_sizes[1],
-                file_name=f'output/density{iteration}'
+                file_name=f"output/density{iteration}",
             )
 
         #     if iteration < 25 or iteration % 5 == 0 or iteration in [32, 64]:

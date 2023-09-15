@@ -42,7 +42,7 @@ class StaticSetup(StaticDisplacementProblem):
     boundaries: ... = BoundariesDescription(
         contact=lambda x: x[1] == 0 and x[0] < 1,
         # dirichlet=lambda x: x[0] == 0 and x[1] > 0.5
-        dirichlet=lambda x: x[0] == 0
+        dirichlet=lambda x: x[0] == 0,
     )
 
 
@@ -53,19 +53,12 @@ def main(config: Config):
     To see result of simulation you need to call from python `main(Config().init())`.
     """
     mesh_descr = CrossMeshDescription(
-        initial_position=None,
-        max_element_perimeter=0.05,
-        scale=[2, 1]
+        initial_position=None, max_element_perimeter=0.05, scale=[2, 1]
     )
     setup = StaticSetup(mesh_descr)
     runner = NonHomogenousSolver(setup, "schur")
 
-    optimizer = Optimization(
-        setup=setup,
-        simulation=runner,
-        filter_radius=0.1,
-        volume_fraction=0.3
-    )
+    optimizer = Optimization(setup=setup, simulation=runner, filter_radius=0.1, volume_fraction=0.3)
     density = optimizer.optimize(25)
 
     # export result of optimization as a mesh
@@ -74,15 +67,14 @@ def main(config: Config):
     # import mesh from saved file
     mesh = Mesh(
         mesh_descr=ImportedMeshDescription(initial_position=None, path="temp.msh"),
-        boundaries_description=setup.boundaries
+        boundaries_description=setup.boundaries,
     )
     traingulation = tri.Triangulation(
-        x=mesh.nodes[:, 0],
-        y=mesh.nodes[:, 1],
-        triangles=mesh.elements
+        x=mesh.nodes[:, 0], y=mesh.nodes[:, 1], triangles=mesh.elements
     )
-    plt.triplot(traingulation, color='#1f77b4')
+    plt.triplot(traingulation, color="#1f77b4")
     plt.show()
+
 
 if __name__ == "__main__":
     main(Config().init())

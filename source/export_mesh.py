@@ -16,10 +16,5 @@ def export_mesh_with_density(mesh: Mesh, mask: np.ndarray, filename: str, binary
     nodes = mesh.nodes[np.logical_not(is_node_removed)]
 
     meshio.write_points_cells(
-        points=nodes,
-        cells={
-            "triangle": elements
-        },
-        filename=filename,
-        binary=binary
+        points=nodes, cells={"triangle": elements}, filename=filename, binary=binary
     )
