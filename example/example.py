@@ -9,11 +9,12 @@ from conmech.helpers.config import Config
 from conmech.mesh.boundaries_description import BoundariesDescription
 from conmech.scenarios.problems import StaticDisplacementProblem
 from conmech.simulations.problem_solver import NonHomogenousSolver
-from conmech.properties.mesh_description import CrossMeshDescription
+from conmech.properties.mesh_description import CrossMeshDescription, ImportedMeshDescription
+from conmech.mesh.mesh import Mesh
 from conmech.examples.p_slope_contact_law import make_slope_contact_law
 
 from source.optimization import Optimization
-from source.export_mesh import import_mesh, export_mesh_with_density
+from source.export_mesh import export_mesh_with_density
 
 
 E = 10000
@@ -67,13 +68,18 @@ def main(config: Config):
     )
     density = optimizer.optimize(25)
 
+    # export result of optimization as a mesh
     export_mesh_with_density(mesh=runner.body.mesh, mask=density > 0.7, filename="temp.msh")
 
-    mesh = import_mesh("temp.msh")
+    # import mesh from saved file
+    mesh = Mesh(
+        mesh_descr=ImportedMeshDescription(initial_position=None, path="temp.msh"),
+        boundaries_description=setup.boundaries
+    )
     traingulation = tri.Triangulation(
-        x=mesh.points[:, 0],
-        y=mesh.points[:, 1],
-        triangles=mesh.cells_dict['triangle']
+        x=mesh.nodes[:, 0],
+        y=mesh.nodes[:, 1],
+        triangles=mesh.elements
     )
     plt.triplot(traingulation, color='#1f77b4')
     plt.show()

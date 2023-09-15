@@ -4,25 +4,6 @@ import numpy as np
 from conmech.mesh.mesh import Mesh
 
 
-def export_mesh(mesh: Mesh, filename: str, binary=False):
-    meshio.write_points_cells(
-        points=mesh.nodes,
-        cells={
-            "triangle": mesh.elements
-        },
-        filename=filename,
-        binary=binary
-    )
-
-
-def import_mesh(filename: str):
-    mesh = meshio.read(filename)
-    # print(mesh.points)
-    # print(mesh.cells_dict['triangle'])
-    # TODO create conmech mesh object
-    return mesh
-
-
 def export_mesh_with_density(mesh: Mesh, mask: np.ndarray, filename: str, binary=False):
     is_node_removed = np.full(mesh.nodes_count, fill_value=True, dtype=bool)
     for element_index, element_nodes in enumerate(mesh.elements):
