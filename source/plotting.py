@@ -8,8 +8,8 @@ from conmech.mesh.mesh import Mesh
 
 def plot_density(mesh: Mesh, density: np.ndarray, ratio: float, file_name: str):
     triangulation = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0],
-        y=mesh.initial_nodes[:, 1],
+        x=mesh.nodes[:, 0],
+        y=mesh.nodes[:, 1],
         triangles=mesh.elements
     )
     plt.tripcolor(triangulation, density, cmap='Greys', vmin=0, vmax=1)
@@ -28,15 +28,15 @@ def plot_density(mesh: Mesh, density: np.ndarray, ratio: float, file_name: str):
 def plot_displacements(mesh: Mesh, displacements: np.ndarray, density: np.ndarray, scale_factor: float, ratio: float, file_name: str):
 
     before = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0],
-        y=mesh.initial_nodes[:, 1],
+        x=mesh.nodes[:, 0],
+        y=mesh.nodes[:, 1],
         triangles=mesh.elements
     )
     before.set_mask(density < 0.08)
     plt.triplot(before, color='#1f77b4')
     after = tri.Triangulation(
-        x=mesh.initial_nodes[:, 0] + displacements[:, 0] * scale_factor,
-        y=mesh.initial_nodes[:, 1] + displacements[:, 1] * scale_factor,
+        x=mesh.nodes[:, 0] + displacements[:, 0] * scale_factor,
+        y=mesh.nodes[:, 1] + displacements[:, 1] * scale_factor,
         triangles=mesh.elements
     )
     after.set_mask(density < 0.08)

@@ -4,13 +4,14 @@ import numpy as np
 from conmech.mesh.mesh import Mesh
 
 
-def export_mesh(mesh: Mesh, filename: str):
+def export_mesh(mesh: Mesh, filename: str, binary=False):
     meshio.write_points_cells(
-        points=mesh.initial_nodes,
+        points=mesh.nodes,
         cells={
             "triangle": mesh.elements
         },
-        filename=filename
+        filename=filename,
+        binary=binary
     )
 
 
@@ -22,7 +23,7 @@ def import_mesh(filename: str):
     return mesh
 
 
-def export_mesh_with_density(mesh: Mesh, mask: np.ndarray, filename: str):
+def export_mesh_with_density(mesh: Mesh, mask: np.ndarray, filename: str, binary=False):
     is_node_removed = np.full(mesh.nodes_count, fill_value=True, dtype=bool)
     for element_index, element_nodes in enumerate(mesh.elements):
         if not mask[element_index]:
@@ -31,12 +32,13 @@ def export_mesh_with_density(mesh: Mesh, mask: np.ndarray, filename: str):
     removed_nodes = np.cumsum(is_node_removed)
 
     elements = [node_idx - removed_nodes[node_idx] for node_idx in mesh.elements[mask]]
-    nodes = mesh.initial_nodes[np.logical_not(is_node_removed)]
+    nodes = mesh.nodes[np.logical_not(is_node_removed)]
 
     meshio.write_points_cells(
         points=nodes,
         cells={
             "triangle": elements
         },
-        filename=filename
+        filename=filename,
+        binary=binary
     )

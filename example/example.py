@@ -9,10 +9,11 @@ from conmech.helpers.config import Config
 from conmech.mesh.boundaries_description import BoundariesDescription
 from conmech.scenarios.problems import StaticDisplacementProblem
 from conmech.simulations.problem_solver import NonHomogenousSolver
-
+from conmech.properties.mesh_description import CrossMeshDescription
 from conmech.examples.p_slope_contact_law import make_slope_contact_law
+
 from source.optimization import Optimization
-from source.export_mesh import export_mesh, import_mesh, export_mesh_with_density
+from source.export_mesh import import_mesh, export_mesh_with_density
 
 
 E = 10000
@@ -21,8 +22,6 @@ kappa = 0.4
 
 @dataclass
 class StaticSetup(StaticDisplacementProblem):
-    grid_height: ... = 1.0
-    elements_number: ... = (20, 40)
     mu_coef: ... = E / (1 + kappa)
     la_coef: ... = E * kappa / ((1 + kappa) * (1 - 2 * kappa))
     contact_law: ... = make_slope_contact_law(slope=0)
@@ -40,7 +39,7 @@ class StaticSetup(StaticDisplacementProblem):
         return 0
 
     boundaries: ... = BoundariesDescription(
-        contact=lambda x: x[1] < 0.5 and x[0] < 1,
+        contact=lambda x: x[1] == 0 and x[0] < 1,
         # dirichlet=lambda x: x[0] == 0 and x[1] > 0.5
         dirichlet=lambda x: x[0] == 0
     )
@@ -52,7 +51,12 @@ def main(config: Config):
 
     To see result of simulation you need to call from python `main(Config().init())`.
     """
-    setup = StaticSetup(mesh_type="cross")
+    mesh_descr = CrossMeshDescription(
+        initial_position=None,
+        max_element_perimeter=0.05,
+        scale=[2, 1]
+    )
+    setup = StaticSetup(mesh_descr)
     runner = NonHomogenousSolver(setup, "schur")
 
     optimizer = Optimization(
@@ -65,14 +69,14 @@ def main(config: Config):
 
     export_mesh_with_density(mesh=runner.body.mesh, mask=density > 0.7, filename="temp.msh")
 
-    # mesh = import_mesh("temp.msh")
-    # traingulation = tri.Triangulation(
-    #     x=mesh.points[:, 0],
-    #     y=mesh.points[:, 1],
-    #     triangles=mesh.cells_dict['triangle']
-    # )
-    # plt.triplot(traingulation, color='#1f77b4')
-    # plt.show()
+    mesh = import_mesh("temp.msh")
+    traingulation = tri.Triangulation(
+        x=mesh.points[:, 0],
+        y=mesh.points[:, 1],
+        triangles=mesh.cells_dict['triangle']
+    )
+    plt.triplot(traingulation, color='#1f77b4')
+    plt.show()
 
 if __name__ == "__main__":
     main(Config().init())

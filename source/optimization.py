@@ -72,7 +72,7 @@ class Optimization:
         return new_comp_deriv
 
     def get_elements_surrounding(self):
-        centers = np.array([center_of_mass(self.mesh.initial_nodes[el_nodes]) for el_nodes in self.mesh.elements])
+        centers = np.array([center_of_mass(self.mesh.nodes[el_nodes]) for el_nodes in self.mesh.elements])
         diffs = centers[:, None] - centers
         distances = np.linalg.norm(diffs, axis=2)
         elem_filter_weights = (self.filter_radius - distances).clip(min=0)
@@ -80,7 +80,7 @@ class Optimization:
 
     def get_elems_volumes(self):
         volumes = np.array([
-            area_of_triangle(self.mesh.initial_nodes[nodes_ids])
+            area_of_triangle(self.mesh.nodes[nodes_ids])
             for nodes_ids in self.mesh.elements
         ])
         return volumes
@@ -143,7 +143,7 @@ class Optimization:
             change = np.max(np.abs(density - old_density))
             print(f'change = {change}')
 
-            axes_sizes = self.setup.elements_number
+            axes_sizes = self.mesh.scale
             plot_displacements(
                 mesh=self.mesh,
                 displacements=result.displacement,
